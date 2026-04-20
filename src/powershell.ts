@@ -7,12 +7,20 @@ import type { AlCompilerError, PsExecutionResult } from "./types.js";
 
 const POWERSHELL = "pwsh";
 
+interface RunPowerShellOptions {
+  summarizeOutput?: boolean;
+}
+
 /**
  * Run a PowerShell command and return parsed results.
  * Captures stdout/stderr, extracts AL compiler errors, and trims
  * the raw output so callers never see 200-line stack traces.
  */
-export function runPowerShell(script: string): Promise<PsExecutionResult> {
+export function runPowerShell(
+  script: string,
+  options: RunPowerShellOptions = {},
+): Promise<PsExecutionResult> {
+  const summarizeOutput = options.summarizeOutput ?? true;
   return new Promise((resolve) => {
     execFile(
       POWERSHELL,
@@ -25,8 +33,8 @@ export function runPowerShell(script: string): Promise<PsExecutionResult> {
         const errors = parseAlErrors(stdout + "\n" + stderr);
         resolve({
           exitCode,
-          stdout: summariseOutput(stdout),
-          stderr: summariseOutput(stderr),
+          stdout: summarizeOutput ? summariseOutput(stdout) : stdout.trim(),
+          stderr: summarizeOutput ? summariseOutput(stderr) : stderr.trim(),
           errors,
         });
       },

@@ -2,7 +2,7 @@
 // ─────────────────────────────────────────────────────────────
 // Layer 3 – MCP Server that exposes Layer 1 to AI agents.
 //
-// Communicates via stdio transport. Registers three tools that
+// Communicates via stdio transport. Registers four tools that
 // map 1-to-1 to the execution-layer functions.
 // ─────────────────────────────────────────────────────────────
 
@@ -10,7 +10,11 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-import { publishToContainer, runContainerTests } from "./bcContainer.js";
+import {
+  publishToContainer,
+  runContainerTests,
+  validateContainer,
+} from "./bcContainer.js";
 import { publishToSandbox } from "./bcSandbox.js";
 import type { BcResult } from "./types.js";
 
@@ -20,6 +24,29 @@ const server = new McpServer({
   name: "bc-app-tools",
   version: "1.0.0",
 });
+
+// ── Tool: bc_validate_container ──────────────────────────────
+
+server.tool(
+  "bc_validate_container",
+  "Validate that a local Business Central Docker container is running and contains the expected installed apps, typically production and test apps.",
+  {
+    containerName: z.string().describe("Name of the Docker container running BC"),
+    tenant: z.string().optional().describe("Optional BC tenant name or ID"),
+    expectedApps: z
+      .array(z.string())
+      .optional()
+      .describe("Optional list of expected installed app names"),
+  },
+  async ({ containerName, tenant, expectedApps }) => {
+    const result = await validateContainer({
+      containerName,
+      tenant,
+      expectedApps,
+    });
+    return toMcpResponse(result);
+  },
+);
 
 // ── Tool: bc_publish_local ───────────────────────────────────
 

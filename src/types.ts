@@ -46,6 +46,46 @@ export interface TestRunReport {
   tests: TestMethodResult[];
 }
 
+/** App discovered in a local BC container. */
+export interface ContainerAppInfo {
+  appId?: string;
+  name: string;
+  publisher?: string;
+  version?: string;
+  isInstalled: boolean;
+  isPublished?: boolean;
+  syncState?: string;
+  extensionType?: string;
+}
+
+/** Validation result for a single expected app name. */
+export interface ContainerExpectedAppResult {
+  expectedName: string;
+  isInstalled: boolean;
+  matchedApp?: ContainerAppInfo;
+}
+
+/** Report returned by validateContainer. */
+export interface ContainerValidationReport {
+  containerName: string;
+  tenant?: string;
+  containerId?: string;
+  containerStatus: string;
+  isRunning: boolean;
+  apps: ContainerAppInfo[];
+  installedApps: ContainerAppInfo[];
+  testApps: ContainerAppInfo[];
+  expectedApps: ContainerExpectedAppResult[];
+  missingApps: string[];
+}
+
+/** Parameters accepted by validateContainer. */
+export interface ValidateContainerParams {
+  containerName: string;
+  tenant?: string;
+  expectedApps?: string[];
+}
+
 /** Parameters accepted by publishToSandbox. */
 export interface SandboxPublishParams {
   tenantId: string;

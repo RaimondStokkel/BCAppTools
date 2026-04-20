@@ -6,7 +6,11 @@
 // ─────────────────────────────────────────────────────────────
 
 import { Command } from "commander";
-import { publishToContainer, runContainerTests } from "./bcContainer.js";
+import {
+  publishToContainer,
+  runContainerTests,
+  validateContainer,
+} from "./bcContainer.js";
 import { publishToSandbox } from "./bcSandbox.js";
 import type { BcResult } from "./types.js";
 
@@ -16,6 +20,36 @@ program
   .name("bc-tools")
   .description("CLI for managing Dynamics 365 Business Central extensions")
   .version("1.0.0");
+
+// ── validate-container ───────────────────────────────────────
+
+program
+  .command("validate-container")
+  .description("Validate a local BC container is running and has the expected apps installed")
+  .requiredOption("-c, --container <name>", "Docker container name")
+  .option("--tenant <name>", "BC tenant name or ID")
+  .option(
+    "--expect-app <name>",
+    "Expected installed app name (repeatable)",
+    collectOptionValue,
+    [] as string[],
+  )
+  .option("--json", "Output strict JSON envelope")
+  .action(
+    async (opts: {
+      container: string;
+      tenant?: string;
+      expectApp: string[];
+      json?: boolean;
+    }) => {
+      const result = await validateContainer({
+        containerName: opts.container,
+        tenant: opts.tenant,
+        expectedApps: opts.expectApp,
+      });
+      output(result, opts.json);
+    },
+  );
 
 // ── publish-local ────────────────────────────────────────────
 
@@ -87,6 +121,11 @@ function output(result: BcResult, json?: boolean): void {
     }
   }
   process.exitCode = result.success ? 0 : 1;
+}
+
+function collectOptionValue(value: string, previous: string[]): string[] {
+  previous.push(value);
+  return previous;
 }
 
 // ── Run ──────────────────────────────────────────────────────

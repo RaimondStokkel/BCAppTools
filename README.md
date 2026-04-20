@@ -1,6 +1,6 @@
 # BCAppTools
 
-CLI and MCP server for managing **Dynamics 365 Business Central** extensions. Publish `.app` files to local Docker containers or cloud sandboxes, and run AL unit tests — from the terminal or through any MCP-compatible AI agent.
+CLI and MCP server for managing **Dynamics 365 Business Central** extensions. Validate local test containers, publish `.app` files to local Docker containers or cloud sandboxes, and run AL unit tests — from the terminal or through any MCP-compatible AI agent.
 
 ---
 
@@ -10,6 +10,7 @@ CLI and MCP server for managing **Dynamics 365 Business Central** extensions. Pu
 - [Installation](#installation)
 - [Architecture](#architecture)
 - [CLI Usage](#cli-usage)
+  - [validate-container](#validate-container)
   - [publish-local](#publish-local)
   - [publish-cloud](#publish-cloud)
   - [run-tests](#run-tests)
@@ -96,6 +97,27 @@ bc-tools publish-local \
 | `--app <path>` | `-a` | ✅ | Path to the `.app` file |
 | `--json` | | | Output as strict JSON envelope |
 
+### validate-container
+
+Validate that a local BC container is running and that the expected apps are already installed. This is useful as a **preflight step** before publishing or running tests.
+
+```bash
+bc-tools validate-container \
+  --container bcserver \
+  --expect-app "EmpireFinance" \
+  --expect-app "EmpireFinanceTests" \
+  --json
+```
+
+| Flag | Short | Required | Description |
+|---|---|---|---|
+| `--container <name>` | `-c` | ✅ | Docker container name |
+| `--tenant <name>` | | | Optional BC tenant name or ID |
+| `--expect-app <name>` | | | Expected installed app name; repeat for production and test apps |
+| `--json` | | | Output as strict JSON envelope |
+
+When `--expect-app` is used, the command fails if the container is not running or if any expected app is missing from the installed apps list.
+
 ### publish-cloud
 
 Upload an `.app` file to a Business Central SaaS sandbox via the Automation API v2.0.
@@ -165,6 +187,31 @@ bc-tools run-tests -c bcserver --json
 
 The exit code is `0` on success, `1` on failure — suitable for CI/CD pipelines.
 
+Example validation response:
+
+```json
+{
+  "success": true,
+  "message": "Container 'bcserver' is running and contains all expected app(s).",
+  "data": {
+    "containerName": "bcserver",
+    "containerStatus": "running",
+    "isRunning": true,
+    "expectedApps": [
+      {
+        "expectedName": "EmpireFinance",
+        "isInstalled": true
+      },
+      {
+        "expectedName": "EmpireFinanceTests",
+        "isInstalled": true
+      }
+    ],
+    "missingApps": []
+  }
+}
+```
+
 ---
 
 ## MCP Server Usage
@@ -217,7 +264,17 @@ Or if you have the package globally linked:
 
 ### Available Tools
 
-Once connected, the AI agent can call three tools:
+Once connected, the AI agent can call four tools:
+
+#### `bc_validate_container`
+
+Validate that a local container is running and already contains the expected installed apps.
+
+| Parameter | Type | Description |
+|---|---|---|
+| `containerName` | `string` | Name of the Docker container running BC |
+| `tenant` | `string` | Optional BC tenant name or ID |
+| `expectedApps` | `string[]` | Optional list of expected installed app names |
 
 #### `bc_publish_local`
 
@@ -285,6 +342,25 @@ interface TestMethodResult {
   durationMs: number;
   errorMessage?: string;  // only on failure
   stackTrace?: string;    // first 5 lines, only on failure
+}
+```
+
+### Container Validation Data
+
+The `validate-container` payload is a structured `ContainerValidationReport`:
+
+```typescript
+interface ContainerValidationReport {
+  containerName: string;
+  tenant?: string;
+  containerId?: string;
+  containerStatus: string;
+  isRunning: boolean;
+  apps: ContainerAppInfo[];
+  installedApps: ContainerAppInfo[];
+  testApps: ContainerAppInfo[];
+  expectedApps: ContainerExpectedAppResult[];
+  missingApps: string[];
 }
 ```
 
