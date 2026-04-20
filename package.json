@@ -1,0 +1,29 @@
+{
+  "name": "bc-app-tools",
+  "version": "1.0.0",
+  "description": "CLI and MCP server for managing Dynamics 365 Business Central extensions",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "bc-tools": "dist/cli.js",
+    "bc-tools-mcp": "dist/mcp-server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "cli": "node dist/cli.js",
+    "mcp": "node dist/mcp-server.js",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": ["business-central", "mcp", "dynamics-365", "al"],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "commander": "^13.1.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  }
+}
